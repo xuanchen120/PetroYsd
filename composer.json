@@ -1,0 +1,33 @@
+{
+  "name": "xuanchen/petro-ysd",
+  "description": "优惠券",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "玄尘",
+      "email": "122383162@qq.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.1.3",
+    "laravel/framework": "*",
+    "illuminate/support": "^7.0|^8.0",
+    "guzzlehttp/guzzle": "^7.0.0",
+    "pimple/pimple": "^3.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "XuanChen\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "XuanChen\\PetroYsd\\ServiceProvider"
+      ],
+      "aliases": {
+        "Petro": "XuanChen\\PetroYsd"
+      }
+    }
+  }
+}
