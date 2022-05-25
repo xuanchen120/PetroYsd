@@ -39,10 +39,10 @@ class LogController extends AdminController
 
         $grid->column('id', '#ID#');
 
-        $grid->column('type', '类型')->using(PetroYsdLog::TYPES)->label();
-        $grid->column('in_source', '入参')->width(350);
-        $grid->column('out_source', '出参')->width(350);
-        $grid->column('created_at', '操作时间');
+        $grid->column('type', '类型')->using(PetroYsdLog::TYPES)->label()->width(50);
+        $grid->column('in_source', '入参')->width(650);
+        $grid->column('out_source', '出参')->width(650);
+        $grid->column('created_at', '操作时间')->width(150);
         return $grid;
     }
 

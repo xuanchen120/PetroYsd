@@ -6,9 +6,9 @@ use App\Models\Model;
 
 class PetroYsdLog extends Model
 {
-    const  TYPE_GRANT   = 'getCoupon';
-    const  TYPE_QUERY   = 'pfQueryCoupon';
-    const  TYPE_DESTORY = 'pfRevokeCoupon';
+    const  TYPE_GRANT   = 'grant';
+    const  TYPE_QUERY   = 'query';
+    const  TYPE_DESTORY = 'destroy';
 
     const  TYPES = [
         self::TYPE_GRANT   => '发券',

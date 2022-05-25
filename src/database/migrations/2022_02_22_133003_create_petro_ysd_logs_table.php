@@ -13,9 +13,9 @@ class CreatePetroYsdLogsTable extends Migration
      */
     public function up()
     {
-        Schema::create('petro_logs', function (Blueprint $table) {
+        Schema::create('petro_ysd_logs', function (Blueprint $table) {
             $table->id();
-            $table->tinyInteger('status');
+            $table->string('type');
             $table->text('in_source');
             $table->text('out_source');
             $table->timestamps();
@@ -29,6 +29,6 @@ class CreatePetroYsdLogsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('petro_logs');
+        Schema::dropIfExists('petro_ysd_logs');
     }
 }

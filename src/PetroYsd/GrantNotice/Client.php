@@ -1,6 +1,6 @@
 <?php
 
-namespace XuanChen\PetroYsd\Notice;
+namespace XuanChen\PetroYsd\GrantNotice;
 
 use Carbon\Carbon;
 use Exception;
@@ -25,14 +25,15 @@ class Client extends BaseClient
      */
     public function start()
     {
-
         try {
+
             $this->res = [
                 'requestId' => Str::random(32),
                 'code'      => 200,
                 'msg'       => '成功',
                 'data'      => '',
             ];
+
             $this->app->rsa->checkSign($this->params);
 
 

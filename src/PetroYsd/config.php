@@ -4,23 +4,25 @@ return [
     /**
      * 服务器地址
      */
-    'base_uri'      => env('PETRO_BASE_URI', ''),
+    'base_uri'       => env('PETRO_YSD_BASE_URI', ''),
+
     /**
-     * 字符集
+     * 渠道编码
      */
-    'characterSet'  => '00',
-    /**
-     * 商户编号
-     */
-    'strVendorCode' => env('PETRO_STR_VENDOR_CODE', ''),
+    'channelCode'    => env('PETRO_YSD_CHANNEL_CODE', ''),
+
     /**
      *商户秘钥
      */
-    'merchantKey'   => env('PETRO_MERCHANT_KEY', ''),
-    /**
-     * 单个电子券秘钥
-     */
-    'couponKey'     => env('PETRO_COUPON_KEY', ''),
+    'private_key'    => env('PETRO_YSD_PRIVATE_KEY', ''),
 
+    /**
+     *商户秘钥
+     */
+    'public_key'     => env('PETRO_YSD_PUBLIC_KEY', ''),
+
+    /**
+     * 回调通知接口
+     */
     'ysd_notice_url' => 'https://lifetest.ysd-bs.com/api/store/callback',
 ];

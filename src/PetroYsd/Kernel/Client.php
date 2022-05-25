@@ -36,11 +36,12 @@ class Client
         return $this->request($method, ...$args);
     }
 
-    public function request(string $method, array $params = [])
+    public function request(string $method, array $params = [], $uri = '')
     {
         $rpcRequest = new RpcRequest();
 
         $rpcRequest->setMethod($method);
+        $rpcRequest->setUri($uri);
 
         if (! empty($params)) {
             $rpcRequest->setParams($params);
@@ -53,12 +54,9 @@ class Client
     {
         try {
             $this->postData = $body->getParams();
-            $this->response = $this->client->post('', [
-                'body'    => json_encode($this->postData, JSON_UNESCAPED_SLASHES),
-                'headers' => [
-                    'Content-Type' => 'application/json;charset=utf-8',
-                    'accept'       => 'application/json;charset=utf-8',
-                ],
+
+            $this->response = $this->client->post($body->getUri(), [
+                'form_params' => $this->postData,
             ]);
 
             $this->resData = json_decode($this->response->getBody()->getContents(), true);
@@ -67,14 +65,9 @@ class Client
                 throw new PetroYsdException('未获取到返回数据');
             }
 
-            if (isset($this->resData['_error'])) {
-                throw new PetroYsdException($this->resData['_error']);
+            if ($this->resData['code'] != 200) {
+                throw new PetroYsdException($this->resData['msg']);
             }
-
-            $this->app->log->setData([
-                'in_source'  => $this->postData,
-                'out_source' => $this->resData ?? [$this->response->getBody()->getContents()]
-            ])->start();
 
             return true;
         } catch (Exception $exception) {

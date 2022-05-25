@@ -8,6 +8,14 @@ use XuanChen\PetroYsd\Kernel\Models\PetroYsdCoupon;
 
 class Client extends BaseClient
 {
+    protected $path = '/channel/order/v1';
+    protected $type = 'grant';
+    protected $mobile;
+
+    public function __construct($app)
+    {
+        parent::__construct($app);
+    }
 
     /**
      * Notes: 开始执行
@@ -19,47 +27,42 @@ class Client extends BaseClient
     public function start()
     {
         try {
-            $this->setActionType('getCoupon');
-            $this->app->client->getGrant($this->getPostData());//获取优惠券
-            $this->app->callback->setInData($this->app->client->resData)->start();//解密
-            $ticketDetail = $this->app->callback->truthfulData['ticketDetail']['0'];
+            $this->mobile = $this->params['mobile'];
 
-            //入库
-            $this->app->log->setData([
-                'in_source'  => $this->client->postData,
-                'out_source' => $this->app->callback->inData
-            ])->start();
+            $this->params['mobile'] = $this->app->rsa->encodeByPublicKey($this->params['mobile']);
+            $this->params['sign']   = $this->getSign();
 
-            $couponNo = $this->decrypt($ticketDetail['ticketNum'], $this->config['couponKey']);
 
-            $coupon = PetroYsdCoupon::query()->where('couponNo', $couponNo)->first();
+            $this->client->getGrant($this->getPostData(), $this->path);//获取优惠券
+
+            $this->addLog();//插入日志
+
+            $ticketDetail = $this->client->resData['data']['0'];
+            $couponCode   = $this->app->rsa->decodeByPrivateKey($ticketDetail['couponCode']);
+
+            $coupon = PetroYsdCoupon::query()->where('couponCode', $couponCode)->first();
             if ($coupon) {
                 return $coupon;
             }
 
             return PetroYsdCoupon::create([
-                'petro_log_id'   => $this->app->log->source->id,
-                'mobile'         => $this->mobile ?? '',
-                'name'           => $ticketDetail['name'],
-                'amount'         => $ticketDetail['amount'],
-                'oilgCatName'    => $ticketDetail['oilgCatName'],
-                'oillimitAmount' => $ticketDetail['oillimitAmount'],
-                'effectiveTime'  => $ticketDetail['effectiveTime'],
-                'expiredDate'    => $ticketDetail['expiredDate'],
-                'requestCode'    => $ticketDetail['requestCode'],
-                'isReuse'        => $ticketDetail['isReuse'],
-                'catName'        => $ticketDetail['catName'],
-                'glCatName'      => $ticketDetail['glCatName'],
-                'oilglCatName'   => $ticketDetail['oilglCatName'],
-                'couponNo'       => $couponNo,
+                'petro_log_id'    => $this->app->log->source->id,
+                'mobile'          => $this->mobile,
+                'productName'     => base64_decode($ticketDetail['productName']),
+                'productId'       => $ticketDetail['productId'],
+                'thirdOrderId'    => $this->params['thirdOrderId'],
+                'couponId'        => $ticketDetail['id'],
+                'couponCode'      => $couponCode,
+                'cashAmount'      => $ticketDetail['cashAmount'] ?? 0,
+                'faceValue'       => $ticketDetail['faceValue'],
+                'couponBeginDate' => $ticketDetail['couponBeginDate'],
+                'couponEndDate'   => $ticketDetail['couponEndDate'],
+                'issuingDate'     => $ticketDetail['issuingDate'],
+                'productType'     => $ticketDetail['productType'],
             ]);
 
         } catch (\Exception $e) {
-            $this->app->log->setData([
-                'in_source'  => $this->app->client->postData,
-                'out_source' => ['error' => $e->getMessage()]
-            ])->start();
-
+            $this->addLog($e->getMessage());
             return $e->getMessage();
         }
 

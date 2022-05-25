@@ -10,6 +10,9 @@ use XuanChen\PetroYsd\Kernel\Models\PetroYsdCoupon;
 class Client extends BaseClient
 {
 
+    protected $path = '/channel/order/destroy';
+    protected $type = 'destroy';
+
     /**
      * Notes: 开始执行
      *
@@ -20,38 +23,27 @@ class Client extends BaseClient
     public function start()
     {
         try {
-            $this->setActionType('pfRevokeCoupon');
 
-            $coupon = PetroYsdCoupon::query()->where('couponNo', $this->params['cxcouponNo'])->first();
+            $this->params['sign'] = $this->getSign();
 
+            $coupon = PetroYsdCoupon::query()->where('couponId', $this->params['couponId'])->first();
             if (! $coupon) {
                 throw new PetroYsdException('未查询到优惠券信息');
             }
 
-            $this->app->client->invalidCoupon($this->getPostData());//获取优惠券
-
-            $this->app->callback->setInData($this->app->client->resData)->start();//解密
-            //入库
-            $this->app->log->setData([
-                'in_source'  => $this->app->client->postData,
-                'out_source' => $this->app->callback->inData
-            ])->start();
+            $this->app->client->getGrantInfo($this->getPostData(), $this->path);//获取优惠券
 
             $coupon->update([
-                'status' => PetroYsdCoupon::STATUS_REPEAL
+                'state' => $this->client->resData['data']['state']
             ]);
 
-            return $this->app->callback->truthfulData;
+            $this->addLog();
+
+            return $this->app->client->resData;
 
         } catch (\Exception $e) {
-            if ($this->app->client->postData) {
-                $this->app->log->setData([
-                    'in_source'  => $this->app->client->postData,
-                    'out_source' => ['error' => $e->getMessage()]
-                ])->start();
-            }
-
-            throw new PetroYsdException($e->getMessage());
+            $this->addLog($e->getMessage());
+            return $e->getMessage();
         }
 
 

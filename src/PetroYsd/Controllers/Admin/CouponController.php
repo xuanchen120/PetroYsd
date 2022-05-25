@@ -10,7 +10,7 @@ use XuanChen\PetroYsd\Kernel\Models\PetroYsdCoupon;
 class CouponController extends AdminController
 {
 
-    protected $title = '中石油优惠券管理';
+    protected $title = '中石油优惠券管理(和悦)';
 
     /**
      * Notes:
@@ -31,39 +31,38 @@ class CouponController extends AdminController
         $grid->filter(function ($filter) {
             $filter->column(1 / 2, function ($filter) {
                 $filter->equal('mobile', '手机号');
-                $filter->equal('couponNo', '电子券请求码');
-                $filter->between('useTime', '核销时间')->datetime();
+                $filter->equal('thirdOrderId', '三方订单号');
+                $filter->equal('productId', '产品ID');
             });
             $filter->column(1 / 2, function ($filter) {
-                $filter->equal('status', '状态')->select(PetroYsdCoupon::STATUS);
-                $filter->like('stationName', '核销站点名称');
-                $filter->like('stationCode', '核销站点编号');
+                $filter->equal('state', '状态')->select(PetroYsdCoupon::STATUS);
             });
         });
 
         $grid->column('id', '#ID#');
         $grid->column('mobile', '手机号');
-        $grid->column('couponNo', '券码');
-        $grid->column('amount', '面额(分)');
-        $grid->column('requestCode', '电子券请求码');
-        $grid->column('effectiveTime', '生效时间');
-        $grid->column('status', '状态')->using(PetroYsdCoupon::STATUS)->label();
-        $grid->column('expiredDate', '失效日期');
-        $grid->column('stationName', '核销站点名称');
-        $grid->column('stationCode', '核销站点编号');
-        $grid->column('useTime', '核销时间');
-        $grid->column('goodsInfo', '详情')->hide();
-        $grid->column('created_at', '获取时间');
+        $grid->column('productName', '产品名称');
+        $grid->column('productId', '产品ID')->hide();
+        $grid->column('thirdOrderId', '三方订单号');
+        $grid->column('couponId', '卡券ID');
+        $grid->column('couponCode', '电子券编号');
+        $grid->column('cashAmount', '实际支付金额')->hide();
+        $grid->column('faceValue', '面值(分)');
+        $grid->column('couponBeginDate', '卡券生效时间');
+        $grid->column('couponEndDate', '卡券失效时间');
+        $grid->column('issuingDate', '发券时间');
+        $grid->column('productType', '产品类型')
+            ->using(PetroYsdCoupon::PRODUCT_TYPES)
+            ->label()
+            ->hide();
+        $grid->column('state', '状态')->using(PetroYsdCoupon::STATUS)->label();
         $grid->disableExport(false);
 
         $grid->export(function ($export) {
             $export->column('mobile', function ($value, $original) {
                 return $value."\t";
             });
-            $export->column('couponNo', function ($value, $original) {
-                return $value."\t";
-            });
-            $export->column('status', function ($value, $original) {
+            $export->column('state', function ($value, $original) {
                 return strip_tags($value);
             });
             $export->filename($this->title.date("YmdHis"));

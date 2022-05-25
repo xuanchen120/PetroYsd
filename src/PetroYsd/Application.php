@@ -11,9 +11,11 @@ use Pimple\Container;
  * @method static Detail\Client Detail
  * @method static Kernel\Client Client
  * @method static Log\Client Log
- * @method static CallBack\Client CallBack
  * @method static Invalid\Client Invalid
  * @method static Notice\Client Notice
+ * @method static GrantNotice\Client GrantNotice
+ * @method static Query\Client Query
+ * @method static Rsa\Client Rsa
  */
 class Application extends Container
 {
@@ -27,9 +29,11 @@ class Application extends Container
         Detail\ServiceProvider::class,
         Kernel\ServiceProvider::class,
         Log\ServiceProvider::class,
-        CallBack\ServiceProvider::class,
         Invalid\ServiceProvider::class,
         Notice\ServiceProvider::class,
+        Query\ServiceProvider::class,
+        Rsa\ServiceProvider::class,
+        GrantNotice\ServiceProvider::class,
     ];
 
     /**
@@ -40,7 +44,7 @@ class Application extends Container
         parent::__construct();
 
         $this['config'] = static function () {
-            return config('petro');
+            return config('petro_ysd');
         };
 
         $this->registerProviders();

@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use XuanChen\PetroYsd;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use App\Api\Controllers\ApiResponse;
+use XuanChen\PetroYsd\Kernel\Models\PetroYsdCoupon;
 
 class IndexController
 {
@@ -28,13 +29,13 @@ class IndexController
             }
 
             $validator = \Validator::make($res, [
-                'activityId' => 'required',
-                'outletId'   => 'required',
-                'mobile'     => 'required',
+                'productNo' => 'required',
+                'outletId'  => 'required',
+                'mobile'    => 'required',
             ], [
-                'activityId.required' => '缺少活动编码',
-                'outletId.required'   => '缺少网点id',
-                'mobile.required'     => '缺少手机号',
+                'productNo.required' => '缺少活动编码',
+                'outletId.required'  => '缺少网点id',
+                'mobile.required'    => '缺少手机号',
             ]);
 
             if ($validator->fails()) {
@@ -42,14 +43,15 @@ class IndexController
             }
 
             $grant = [
-                'requestCode' => $res['activityId'],
-                'tradeId'     => $res['tradeId'],
-                'ticketSum'   => 1,
-                'amount'      => $res['amount'],
-                'random'      => Str::random(6),
+                'requestId'    => Str::random(32),
+                'productNo'    => $res['productNo'],
+                'mobile'       => $res['mobile'],
+                'num'          => 1,
+                'thirdOrderId' => $res['thirdOrderId'],
             ];
 
-            $res = PetroYsd::Grant()->setParams($grant)->setMobile($res['mobile'])->start();
+            $res = PetroYsd::Grant()->setParams($grant)->start();
+
             return $this->success($res, $this->log);
         } catch (\Exception $exception) {
             return $this->error($exception->getMessage(), $this->log);
@@ -60,30 +62,38 @@ class IndexController
     {
         try {
             $inputdata = $request->all();
-            $res       = $this->checkSign($request);
+            $jiemi     = $this->checkSign($request);
 
             //获取解密后数据
-            $inputdata['jiemi'] = $res;
+            $inputdata['jiemi'] = $jiemi;
             $this->log          = $this->createLog($request->url(), 'POST', $inputdata, 'query'); //添加日志
 
-            if (is_string($res)) {
-                return $this->error($res, $this->log);
+            if (is_string($jiemi)) {
+                return $this->error($jiemi, $this->log);
             }
 
-            $validator = \Validator::make($res, [
-                'couponNo' => 'required',
+            $validator = \Validator::make($jiemi, [
+                'conponCode' => 'required',
             ], [
-                'couponNo.required' => '缺少券码',
+                'conponCode.required' => '电子券编号',
             ]);
 
             if ($validator->fails()) {
                 return $this->error($validator->errors()->first(), $this->log);
             }
 
-            $res = PetroYsd::Detail()->setParams([
-                'couponNo' => $res['couponNo'],
-                'random'   => Str::random(6),
-            ])->start();
+            $coupon = PetroYsdCoupon::where('couponCode', $jiemi['conponCode'])->first();
+
+            if (! $coupon) {
+                return $this->error('未找到优惠券信息', $this->log);
+            }
+
+            $res = PetroYsd::Detail()
+                ->setParams([
+                    'requestId'  => Str::random(32),
+                    'couponId'   => $coupon->couponId,
+                    'couponType' => 0,
+                ])->start();
 
             return $this->success($res, $this->log);
         } catch (\Exception $exception) {
@@ -95,30 +105,38 @@ class IndexController
     {
         try {
             $inputdata = $request->all();
-            $res       = $this->checkSign($request);
+            $jiemi     = $this->checkSign($request);
 
             //获取解密后数据
-            $inputdata['jiemi'] = $res;
-            $this->log          = $this->createLog($request->url(), 'POST', $inputdata, 'query'); //添加日志
+            $inputdata['jiemi'] = $jiemi;
+            $this->log          = $this->createLog($request->url(), 'POST', $inputdata, 'destroy'); //添加日志
 
-            if (is_string($res)) {
-                return $this->error($res, $this->log);
+            if (is_string($jiemi)) {
+                return $this->error($jiemi, $this->log);
             }
 
-            $validator = \Validator::make($res, [
-                'couponNo' => 'required',
+            $validator = \Validator::make($jiemi, [
+                'conponCode' => 'required',
             ], [
-                'couponNo.required' => '缺少券码',
+                'conponCode.required' => '缺少券码',
             ]);
 
             if ($validator->fails()) {
                 return $this->error($validator->errors()->first(), $this->log);
             }
 
-            $res = PetroYsd::Invalid()->setParams([
-                'cxcouponNo' => $res['couponNo'],
-                'random'     => Str::random(6),
-            ])->start();
+            $coupon = PetroYsdCoupon::where('couponCode', $jiemi['conponCode'])->first();
+
+            if (! $coupon) {
+                return $this->error('未找到优惠券信息', $this->log);
+            }
+
+            $res = PetroYsd::Invalid()
+                ->setParams([
+                    'requestId'  => Str::random(32),
+                    'couponId'   => $coupon->couponId,
+                    'couponType' => 0,
+                ])->start();
 
             return $this->success($res, $this->log);
         } catch (\Exception $exception) {
@@ -135,20 +153,33 @@ class IndexController
     public function notice(Request $request)
     {
         try {
-            $data      = $request->all();
+            $data = $request->all();
+
             $validator = \Validator::make($data, [
-                'sendMessage' => 'required',
+                'couponId'     => 'required',
+                'timestamp'    => 'required',
+                'useTime'      => 'required',
+                'useShop'      => 'required',
+                'thirdOrderId' => 'required',
+                'state'        => 'required',
+                'sign'         => 'required',
             ], [
-                'sendMessage.required' => '缺少参数',
+                'couponId.required'     => '缺少卡券ID',
+                'timestamp.required'    => '缺少时间戳',
+                'useTime.required'      => '缺少使用时间',
+                'useShop.required'      => '缺少使用门店',
+                'thirdOrderId.required' => '缺少三方订单号',
+                'state.required'        => '缺少卡券状态',
+                'sign.required'         => '缺少签名',
             ]);
 
 
-            $this->log = $this->createLog($request->url(), 'POST', $data, 'query'); //添加日志
+            $this->log = $this->createLog($request->url(), 'POST', $data, 'notice'); //添加日志
             if ($validator->fails()) {
                 return $this->error($validator->errors()->first(), $this->log);
             }
 
-            $res = PetroYsd::Notice()->setParams($data)->start();
+            $res = PetroYsd::Notice()->setParams($data, 'in')->start();
 
             $this->updateLog($this->log, $res); //更新日志
             return response()->json($res);
@@ -158,46 +189,42 @@ class IndexController
     }
 
     /**
-     * Notes: 获取动态码
+     * Notes: 发券结果通知接口
      *
      * @Author: 玄尘
-     * @Date: 2022/3/4 13:31
+     * @Date: 2022/5/25 10:17
      * @param  Request  $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function checkCode(Request $request)
+    public function grantNotice(Request $request)
     {
         try {
-            $inputdata = $request->all();
-            $res       = $this->checkSign($request);
+            $data = $request->all();
 
-            //获取解密后数据
-            $inputdata['jiemi'] = $res;
-            $this->log          = $this->createLog($request->url(), 'POST', $inputdata, 'query'); //添加日志
-
-            if (is_string($res)) {
-                return $this->error($res, $this->log);
-            }
-
-            $validator = \Validator::make($res, [
-                'couponNo' => 'required',
+            $validator = \Validator::make($data, [
+                'requestId'    => 'required',
+                'timestamp'    => 'required',
+                'thirdOrderId' => 'required',
+                'data'         => 'required',
+                'sign'         => 'required',
             ], [
-                'couponNo.required' => '缺少券码',
+                'requestId.required'    => '缺少卡券ID',
+                'timestamp.required'    => '缺少时间戳',
+                'thirdOrderId.required' => '缺少三方订单号',
+                'data.required'         => '缺少券信息',
+                'sign.required'         => '缺少签名',
             ]);
 
-            if ($validator->fails()) {
-                return $this->error($validator->errors()->first(), $this->log);
-            }
+            $this->log = $this->createLog($request->url(), 'POST', $data, 'query'); //添加日志
 
-            $code = PetroYsd::Check()->setParams([
-                'ticketNum' => $res['couponNo'],
-                'random'    => Str::random(6),
-            ])->start();
+            $res = PetroYsd::GrantNotice()->setParams($data, 'in')->start();
 
-            return $this->success($code, $this->log);
+            info('grantNotice');
+            info($data);
+            return response()->json($data);
         } catch (\Exception $exception) {
-            return $this->error($exception->getMessage(), $this->log);
+            return response()->json($exception->getMessage());
         }
     }
-
 
 }

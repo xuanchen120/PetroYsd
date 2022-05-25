@@ -13,32 +13,24 @@ class CreatePetroYsdCouponsTable extends Migration
      */
     public function up()
     {
-        Schema::create('petro_coupons', function (Blueprint $table) {
+        Schema::create('petro_ysd_coupons', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('petro_log_id');
             $table->string('mobile');
-            $table->string('name')->comment('电子券名称');
-            $table->string('amount')->comment('面额');
-            $table->string('couponNo')->comment('电子券编号');
-            $table->tinyInteger('status')->default(2);
-            $table->string('requestCode')->comment('电子券请求码');
-            $table->string('limitAmount')->comment('便利店金额限制');
-            $table->string('oillimitAmount')->comment('油品金额限制');
-            $table->string('ttlimitAmount')->comment('总金额限制');
-            $table->string('effectiveTime')->comment('生效日期');
-            $table->string('expirdDate')->comment('失效日期');
-            $table->string('isReuse')->comment('是否叠加');
-            $table->string('stationLimitName')->comment('加油站限制');
-            $table->string('goodsTypeStr')->comment('商品类型');
-            $table->string('catName')->comment('商品大类');
-            $table->string('glCatName')->comment('商品');
-            $table->string('oilgCatName')->comment('油品大类');
-            $table->string('oilglCatName')->comment('油品小类');
-            $table->string('stationName')->comment('核销站点名称');
-            $table->string('stationCode')->comment('核销站点编');
-            $table->decimal('realAmount')->comment('实际支付金额');
-            $table->json('goodsInfo')->comment('使用的商品数据');
-            $table->dateTime('useTime')->comment('核销时间');
+            $table->string('productName')->comment('产品名称');
+            $table->string('productId')->comment('产品ID');
+            $table->string('thirdOrderId')->comment('三方订单号');
+            $table->string('couponId')->comment('卡券ID');
+            $table->string('couponCode')->comment('电子券编号');
+            $table->string('cashAmount')->comment('实际支付金额');
+            $table->string('faceValue')->comment('面值(分)');
+            $table->timestamp('couponBeginDate')->nullable()->comment('卡券生效时间');
+            $table->timestamp('couponEndDate')->nullable()->comment('卡券失效时间');
+            $table->timestamp('issuingDate')->nullable()->comment('发券时间');
+            $table->timestamp('useTime')->nullable()->comment('使用时间');
+            $table->string('useShop', 150)->nullable()->comment('使用门店');
+            $table->string('productType')->comment('产品类型');
+            $table->tinyInteger('state')->default(1);
             $table->timestamps();
         });
     }
@@ -50,6 +42,6 @@ class CreatePetroYsdCouponsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('petro_coupons');
+        Schema::dropIfExists('petro_ysd_coupons');
     }
 }

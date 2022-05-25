@@ -6,18 +6,26 @@ class RpcRequest
 {
 
     protected ?string $method;
+    protected         $uri;
+    protected array   $params = [];
 
-    protected array $params = [];
-
-    public function __construct(string $method = null, array $params = [])
+    public function __construct(string $method = null, array $params = [], $uri = '')
     {
         $this->method = $method;
         $this->params = $params;
+        $this->uri    = $uri;
     }
 
     public function setMethod(string $method): RpcRequest
     {
         $this->method = $method;
+
+        return $this;
+    }
+
+    public function setUri(string $uri): RpcRequest
+    {
+        $this->uri = $uri;
 
         return $this;
     }
@@ -46,5 +54,12 @@ class RpcRequest
     public function getParams()
     {
         return $this->params;
+        ksort($params);
+        return http_build_query($params);
+    }
+
+    public function getUri()
+    {
+        return $this->uri;
     }
 }

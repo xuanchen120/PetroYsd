@@ -5,6 +5,7 @@ namespace XuanChen\PetroYsd\Kernel;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use XuanChen\PetroYsd\Exceptions\PetroYsdException;
 
 class BaseClient
 {
@@ -12,25 +13,21 @@ class BaseClient
 
     protected $config;
 
-    protected $method = 'AES-128-ECB';
+    //传入参数
+    protected $params;
 
-    protected $params;//传入参数
-
-    protected $body;//aes params
+    protected $body;
 
     public $verifyCode;//签名
 
     protected $client;
-
-    public $mobile;
-
-    protected $strActionType;
 
     public function __construct($app)
     {
         $this->app    = $app;
         $this->config = $app->config;
         $this->client = $app->client;
+        $this->rsa    = $app->rsa;
     }
 
     /**
@@ -38,19 +35,8 @@ class BaseClient
      */
     public function getMsecTime()
     {
-        [$msec, $sec] = explode(' ', microtime());
-        $msectime = (float) sprintf('%.0f', (floatval($msec) + floatval($sec)) * 1000);
-        $msectime = explode('.', $msectime);
-
-        return $msectime[0];
+        return Carbon::now()->timestamp;
     }
-
-    public function setActionType($type)
-    {
-        $this->strActionType = $type;
-        return $this;
-    }
-
 
     /**
      * Notes: 签名
@@ -58,63 +44,27 @@ class BaseClient
      * @Author: 玄尘
      * @Date: 2022/2/22 9:52
      */
-    public function setSign(string $body)
+    public function getSign()
     {
-        $this->str        = $body.$this->config['merchantKey'];
-        $this->verifyCode = md5($this->str);
-        return $this;
+        $signString = $this->getSignString();
+
+        return $this->app->rsa->sign($signString);
     }
 
     /**
-     * Notes: 设置header
+     * Notes: 获取签名字符串
      *
      * @Author: 玄尘
-     * @Date: 2022/2/22 10:05
+     * @Date: 2022/5/23 10:57
+     * @return string
      */
-    public function getHeader()
+    public function getSignString()
     {
-        if (! $this->verifyCode) {
-            $this->setSign($this->encrypt($this->params));
-        }
-
-        $this->header = [
-            'characterSet'  => Arr::get($this->config, 'characterSet', ''),
-            'strVendorCode' => Arr::get($this->config, 'strVendorCode', ''),
-            'signType'      => Arr::get($this->config, 'signType', 'MD5'),
-            'strActionType' => $this->strActionType,
-            'verifyCode'    => $this->verifyCode,
-            'timestamp'     => $this->getMsecTime(),
-        ];
-
-        return $this->header;
+        $params = $this->params;
+        ksort($params);
+        return join("", array_values($params));
     }
 
-    //加密
-    public function encrypt($data): string
-    {
-        if (! is_string($data) && ! is_array($data)) {
-            throw new \Exception('The encrypt data must be a string or an array.');
-        }
-
-        if (is_array($data)) {
-            $data = json_encode($data);
-        }
-
-        return $this->body = base64_encode(openssl_encrypt($data, $this->method, $this->config['merchantKey'],
-            OPENSSL_RAW_DATA));
-    }
-
-    //解密
-    public function decrypt($data, $merchanKey = '')
-    {
-        if (! $merchanKey) {
-            $merchanKey = $this->config['merchantKey'];
-        }
-
-        $data  = openssl_decrypt(base64_decode($data), $this->method, $merchanKey, OPENSSL_RAW_DATA);
-        $array = json_decode($data, true);
-        return is_array($array) ? $array : $data;
-    }
 
     /**
      * Notes: 设置传入数据
@@ -124,25 +74,20 @@ class BaseClient
      * @param  array  $args
      * @return $this
      */
-    public function setParams(array $args): self
+    public function setParams(array $args, $type = 'out'): self
     {
-        $this->params = $args;
+        if ($type == 'out') {
+            $this->params = array_merge($args, [
+                'channelCode' => $this->config['channelCode'],
+                'timestamp'   => $this->getMsecTime(),
+            ]);
+        } else {
+            $this->params = $args;
+        }
+
         return $this;
     }
 
-    /**
-     * Notes: 设置手机号
-     *
-     * @Author: 玄尘
-     * @Date: 2022/2/23 14:10
-     * @param  string  $mobile
-     * @return $this
-     */
-    public function setMobile(string $mobile)
-    {
-        $this->mobile = $mobile;
-        return $this;
-    }
 
     /**
      * Notes: 获取请求数据
@@ -153,46 +98,28 @@ class BaseClient
      */
     public function getPostData(): array
     {
-        return [
-            'sendMessage' => [
-                'head' => $this->getHeader(),
-                'body' => $this->body,
-            ]
-        ];
+        return $this->params;
     }
 
     /**
-     * Notes: 返回中石油的数据
+     * Notes: 插入日志
      *
      * @Author: 玄尘
-     * @Date: 2022/3/2 16:51
+     * @Date: 2022/5/24 15:11
      */
-    public function getBackData($status, $list)
+    public function addLog($msg = '')
     {
-        $list = trim($list, ',');
+        $out_source = ['error' => $msg];
+        if ($this->client->resData) {
+            $out_source = $this->client->resData;
+        }
 
-        $params = [
-            "couponStateChangeReponseVo" => [
-                "msg"    => $status ? "成功" : "失败",
-                "okList" => $list,
-                "status" => $status ? 1 : -1
-            ]
-        ];
+        $this->app->log->setData([
+            'type'       => $this->type,
+            'in_source'  => $this->params,
+            'out_source' => $out_source
+        ])->start();
 
-        $this->setSign($this->encrypt($params));
-        return [
-            'postMessage' => [
-                'head' => [
-                    "requestType"  => "ELEXX002",
-                    "message"      => $status ? "成功" : "失败",
-                    "user"         => "PETROCHINA",
-                    "uuid"         => Str::uuid()->toString(),
-                    "responseCode" => 0,
-                    "verifyCode"   => $this->verifyCode,
-                    "timestamp"    => Carbon::now()->format('Y-m-d')
-                ],
-                'body' => $this->encrypt($params),
-            ]
-        ];
     }
+
 }

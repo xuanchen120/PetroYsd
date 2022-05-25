@@ -24,7 +24,7 @@ class Client
     {
         try {
             $this->source = PetroYsdLog::create([
-                'type'       => Arr::get($this->params, 'in_source.sendMessage.head.strActionType', ''),
+                'type'       => Arr::get($this->params, 'type', ''),
                 'in_source'  => Arr::get($this->params, 'in_source', ''),
                 'out_source' => Arr::get($this->params, 'out_source', ''),
             ]);
