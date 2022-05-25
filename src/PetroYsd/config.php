@@ -20,9 +20,4 @@ return [
      *商户秘钥
      */
     'public_key'     => env('PETRO_YSD_PUBLIC_KEY', ''),
-
-    /**
-     * 回调通知接口
-     */
-    'ysd_notice_url' => 'https://lifetest.ysd-bs.com/api/store/callback',
 ];
