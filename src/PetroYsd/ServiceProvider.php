@@ -33,5 +33,7 @@ class ServiceProvider extends LaravelServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/config.php', 'petro_ysd');
+
+        $this->app->register(EventServiceProvider::class);
     }
 }

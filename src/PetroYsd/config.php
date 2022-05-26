@@ -20,4 +20,10 @@ return [
      *商户秘钥
      */
     'public_key'     => env('PETRO_YSD_PUBLIC_KEY', ''),
+
+    /**
+     * 本时生活回调地区
+     */
+    'ysd_notice_url' => env('PETRO_YSD_CARD_NOTICE_URL', ''),
+
 ];

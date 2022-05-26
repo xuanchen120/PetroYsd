@@ -49,7 +49,8 @@ class Client extends BaseClient
                 'useShop' => $this->params['useShop'],
                 'state'   => $this->params['state'],
             ]);
-
+            
+            event(new CouponNotice($coupon));
             return $this->res;
         } catch (\Exception $e) {
             $this->res['code'] = 499;
