@@ -48,7 +48,7 @@ class Client extends BaseClient
             return PetroYsdCoupon::create([
                 'petro_log_id'    => $this->app->log->source->id,
                 'mobile'          => $this->mobile,
-                'productName'     => base64_decode($ticketDetail['productName']),
+                'productName'     => base64_decode($ticketDetail['productName']) ?: $ticketDetail['productName'],
                 'productId'       => $ticketDetail['productId'],
                 'thirdOrderId'    => $this->params['thirdOrderId'],
                 'couponId'        => $ticketDetail['id'],
