@@ -43,7 +43,7 @@ class IndexController
             }
 
             $grant = [
-                'requestId'    => Str::random(32),
+                'requestId'    => $res['thirdOrderId'],
                 'productNo'    => $res['productNo'],
                 'mobile'       => $res['mobile'],
                 'num'          => 1,
