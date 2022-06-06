@@ -14,7 +14,8 @@ class PetroYsdConponNoticeListener implements ShouldQueue
 
     /**
      * Handle the event.
-     *  本时生活 2 核销 3 作废  1撤销
+     *  本时生活 0 未使用 2 核销 3 作废  1撤销
+     *  本程序  1 未使用 2 已作废 4  已使用
      *
      * @param  CouponNotice  $event
      * @return void
@@ -25,13 +26,17 @@ class PetroYsdConponNoticeListener implements ShouldQueue
         $coupon = $event->petro_coupon;
         $url    = config('petro_ysd.ysd_notice_url');
         if ($url) {
-            $client = new Client();
-
+            $client   = new Client();
+            $status   = [
+                            1 => 0,
+                            2 => 3,
+                            4 => 2,
+                        ][$coupon->state];
             $response = $client->request('post', $url, [
                 'timeout' => 30,
                 'query'   => [
                     'code'   => $coupon->couponCode,
-                    'status' => 3,
+                    'status' => $status,
                 ],
             ]);
             

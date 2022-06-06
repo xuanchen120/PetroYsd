@@ -7,7 +7,7 @@ use App\Models\Model;
 class PetroYsdLog extends Model
 {
     const  TYPE_GRANT   = 'grant';
-    const  TYPE_QUERY   = 'query';
+    const  TYPE_QUERY   = 'detail';
     const  TYPE_DESTORY = 'destroy';
 
     const  TYPES = [

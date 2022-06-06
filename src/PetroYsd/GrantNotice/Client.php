@@ -36,20 +36,32 @@ class Client extends BaseClient
 
             $this->app->rsa->checkSign($this->params);
 
+            $this->addLog();//插入日志
 
-            $coupon = PetroYsdCoupon::query()
-                ->where('couponId', $this->params['couponId'])
-                ->first();
+            $ticketDetail = $this->params['data']['0'];
+            $couponCode   = $this->app->rsa->decodeByPrivateKey($ticketDetail['couponCode']);
 
-            if (! $coupon) {
-                throw  new PetroYsdException('未找到优惠券信息');
+            $coupon = PetroYsdCoupon::query()->where('couponCode', $couponCode)->first();
+            if ($coupon) {
+                return $coupon;
             }
 
-            $coupon->update([
-                'useTime' => $this->params['useTime'],
-                'useShop' => $this->params['useShop'],
-                'state'   => $this->params['state'],
+            return PetroYsdCoupon::create([
+                'petro_log_id'    => $this->app->log->source->id,
+                'mobile'          => $this->mobile,
+                'productName'     => $ticketDetail['productName'],
+                'productId'       => $ticketDetail['productId'],
+                'thirdOrderId'    => $this->params['thirdOrderId'],
+                'couponId'        => $ticketDetail['id'],
+                'couponCode'      => $couponCode,
+                'cashAmount'      => $ticketDetail['cashAmount'] ?? 0,
+                'faceValue'       => $ticketDetail['faceValue'],
+                'couponBeginDate' => $ticketDetail['couponBeginDate'],
+                'couponEndDate'   => $ticketDetail['couponEndDate'],
+                'issuingDate'     => $ticketDetail['issuingDate'],
+                'productType'     => $ticketDetail['productType'],
             ]);
+
 
             return $this->res;
         } catch (\Exception $e) {

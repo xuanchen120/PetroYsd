@@ -219,8 +219,6 @@ class IndexController
 
             $res = PetroYsd::GrantNotice()->setParams($data, 'in')->start();
 
-            info('grantNotice');
-            info($data);
             return response()->json($data);
         } catch (\Exception $exception) {
             return response()->json($exception->getMessage());
