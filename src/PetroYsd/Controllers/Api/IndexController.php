@@ -2,7 +2,6 @@
 
 namespace XuanChen\PetroYsd\Controllers\Api;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use XuanChen\PetroYsd;
@@ -17,6 +16,7 @@ class IndexController
     public function grant(Request $request)
     {
         try {
+
             $inputdata = $request->all();
             $res       = $this->checkSign($request);
 
