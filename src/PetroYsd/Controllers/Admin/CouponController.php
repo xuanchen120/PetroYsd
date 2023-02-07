@@ -36,6 +36,7 @@ class CouponController extends AdminController
             });
             $filter->column(1 / 2, function ($filter) {
                 $filter->equal('state', '状态')->select(PetroYsdCoupon::STATUS);
+                $filter->between('issuingDate', '发券时间')->datetime();
             });
         });
 
