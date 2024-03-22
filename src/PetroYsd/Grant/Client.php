@@ -8,7 +8,7 @@ use XuanChen\PetroYsd\Kernel\Models\PetroYsdCoupon;
 
 class Client extends BaseClient
 {
-    protected $path = '/channel/order/v1';
+    protected $path = '/channel/order';
     protected $type = 'grant';
     protected $mobile;
 
@@ -31,7 +31,6 @@ class Client extends BaseClient
 
             $this->params['mobile'] = $this->app->rsa->encodeByPublicKey($this->params['mobile']);
             $this->params['sign']   = $this->getSign();
-
 
             $this->client->getGrant($this->getPostData(), $this->path);//获取优惠券
 
@@ -60,12 +59,10 @@ class Client extends BaseClient
                 'issuingDate'     => $ticketDetail['issuingDate'],
                 'productType'     => $ticketDetail['productType'],
             ]);
-
         } catch (\Exception $e) {
             $this->addLog($e->getMessage());
             return $e->getMessage();
         }
-
     }
 
 }
